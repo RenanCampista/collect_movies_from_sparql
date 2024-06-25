@@ -1,28 +1,29 @@
 import json
 from SPARQLWrapper import SPARQLWrapper, JSON
 
-ENDPOINT_URL = "https://query.wikidata.org/sparql"
+ENDPOINT_URL = "https://dbpedia.org/sparql"
 
 def start_sparql(endpoint: str) -> dict:
     """Start SPARQL connection with Wikidata and return results."""
     
     sparql = SPARQLWrapper(endpoint)
     sparql.setQuery("""
-        SELECT ?film ?filmLabel ?abstract ?releaseDate ?directorLabel ?ageRating ?poster ?rating ?trailer ?genreLabel ?runtime
+        SELECT ?film ?title ?abstract ?releaseDate ?director ?ageRating ?poster ?rating ?trailer ?genre ?runtime
         WHERE {
-          ?film wdt:P31 wd:Q11424.  # instance of film
-          ?film wdt:P1476 ?filmLabel.  # title
-          OPTIONAL { ?film schema:description ?abstract. FILTER(LANG(?abstract) = "en") }
-          OPTIONAL { ?film wdt:P577 ?releaseDate. }
-          OPTIONAL { ?film wdt:P57 ?director. }
-          OPTIONAL { ?film wdt:P5646 ?ageRating. }
-          OPTIONAL { ?film wdt:P154 ?poster. }
-          OPTIONAL { ?film wdt:P444 ?rating. }
-          OPTIONAL { ?film wdt:P1651 ?trailer. }
-          OPTIONAL { ?film wdt:P136 ?genre. }
-          OPTIONAL { ?film wdt:P2047 ?runtime. }
-          FILTER(?releaseDate >= "2005-01-01T00:00:00Z"^^xsd:dateTime)
-          SERVICE wikibase:label { bd:serviceParam wikibase:language "[AUTO_LANGUAGE],en". }
+            ?film a dbo:Film .
+            ?film rdfs:label ?title .
+            OPTIONAL { ?film dbo:abstract ?abstract . }
+            OPTIONAL { ?film dbo:releaseDate ?releaseDate . }
+            OPTIONAL { ?film dbo:director ?director . }
+            OPTIONAL { ?film dbo:ageRating ?ageRating . }
+            OPTIONAL { ?film dbo:thumbnail ?poster . }
+            OPTIONAL { ?film dbo:rating ?rating . }
+            OPTIONAL { ?film dbo:trailer ?trailer . }
+            OPTIONAL { ?film dbo:genre ?genre . }
+            OPTIONAL { ?film dbo:runtime ?runtime . }
+            FILTER (lang(?title) = 'en') .
+            FILTER (lang(?abstract) = 'en') .
+            FILTER (?releaseDate >= "2005-01-01"^^xsd:date)
         }
         LIMIT 100
     """)
@@ -40,15 +41,15 @@ def get_movies(results: dict) -> list:
     for result in results["results"]["bindings"]:
         movie = {
             "Film": result["film"]["value"],
-            "Title": result["filmLabel"]["value"],
+            "Title": result["title"]["value"],
             "Plot": result.get("abstract", {}).get("value", "N/A"),
             "Released": result.get("releaseDate", {}).get("value", "N/A"),
-            "Director": result.get("directorLabel", {}).get("value", "N/A"),
+            "Director": result.get("director", {}).get("value", "N/A"),
             "Rated": result.get("ageRating", {}).get("value", "N/A"),
             "Poster": result.get("poster", {}).get("value", "N/A"),
             "Ratings": result.get("rating", {}).get("value", "N/A"),
             "Trailer": result.get("trailer", {}).get("value", "N/A"),
-            "Genre": result.get("genreLabel", {}).get("value", "N/A"),
+            "Genre": result.get("genre", {}).get("value", "N/A"),
             "Runtime": result.get("runtime", {}).get("value", "N/A")
         }
         movies.append(movie)        
